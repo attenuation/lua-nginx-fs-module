@@ -1,0 +1,37 @@
+if [ $USE_THREADS != YES ]; then
+    cat << END
+
+$0: lua_nginx_fs_module depends on the threads support, please reconfigure with "--with-threads" option.
+
+END
+    exit 1
+fi
+
+for header in $HTTP_LUA_DEPS
+do
+    has=`echo $header | grep -q "ngx_http_lua_util.h"`
+    if [ -n $has ]; then
+        dir=`dirname $header`
+        CORE_INCS="$CORE_INCS $dir"
+        break
+    fi
+done
+
+
+ngx_addon_name=ngx_http_fs_module
+
+if test -n "$ngx_module_link"; then
+  ngx_module_type=HTTP
+  ngx_module_name=ngx_http_fs_module
+  ngx_module_deps="$ngx_addon_dir/src/ngx_http_lua_file.h"
+  ngx_module_srcs="$ngx_addon_dir/src/ngx_http_fs_module.c $ngx_addon_dir/src/ngx_http_lua_file.c"
+
+  . auto/module
+else
+	HTTP_MODULES="$HTTP_MODULES ngx_http_fs_module"
+    NGX_ADDON_DEPS="$CORE_DEPS $ngx_addon_dir/src/ngx_http_lua_file.h"
+	NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/src/ngx_http_fs_module.c $ngx_addon_dir/src/ngx_http_lua_file.c"
+
+    CORE_INCS="$CORE_INCS $ngx_module_incs"
+    CORE_LIBS="$CORE_LIBS $ngx_module_libs"
+fi
